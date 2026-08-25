@@ -1,0 +1,56 @@
+LOCALFORGE ADVANCED TOOLS — BOOTSTRAP PATCH
+
+In your current bootstrap.js, find the section where features.js is loaded:
+
+    await startFeatures();
+
+Immediately AFTER it, add:
+
+    try {
+        const advancedTools = await import("./advanced-tools.js");
+
+        if (typeof advancedTools.initializeAdvancedTools === "function") {
+            advancedTools.initializeAdvancedTools();
+        }
+
+        window.LocalForgeModules =
+            window.LocalForgeModules || {};
+
+        window.LocalForgeModules.advancedTools =
+            advancedTools;
+
+        console.log(
+            "[LocalForge] Advanced mobile tools ready."
+        );
+    }
+    catch (error) {
+        console.warn(
+            "[LocalForge] Advanced tools unavailable:",
+            error
+        );
+    }
+
+Then continue with service-worker registration as normal.
+
+
+OPTIONAL sw.js CACHE ADDITION
+
+Add:
+
+    "./advanced-tools.js",
+
+to the CORE cache array.
+
+
+WHAT THIS PACK ADDS
+
+- 288 generated sculpt brush presets
+- 32 focused sculpt workflow tools
+- 124 functional modifier-node presets
+- 48 generated multi-node stacks
+- 492 total advanced tool entries
+- Search
+- Categories
+- Mobile bottom-sheet UI
+- Paging so hundreds of tools do not overload the mobile DOM
+- Uses the existing app.js engine rather than creating a second renderer
