@@ -10,18 +10,45 @@
 
 <meta name="theme-color" content="#080a0e">
 <meta name="color-scheme" content="dark">
+
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="LocalForge 3D">
 
 <title>LocalForge 3D</title>
 
-<link rel="manifest" href="./manifest.webmanifest">
+<!-- =====================================================
+     FAST BOOT
+     ===================================================== -->
 
-<!-- Existing stylesheet is still allowed to extend/override this -->
-<link rel="stylesheet" href="./assets/css/app.css">
+<link rel="preconnect"
+      href="https://cdn.jsdelivr.net"
+      crossorigin>
 
-<!-- Three.js import map -->
+<link rel="dns-prefetch"
+      href="//cdn.jsdelivr.net">
+
+<link rel="preload"
+      href="./assets/css/app.css"
+      as="style">
+
+<link rel="modulepreload"
+      href="./assets/js/app.js">
+
+<link rel="modulepreload"
+      href="https://cdn.jsdelivr.net/npm/three@0.185.0/build/three.module.js"
+      crossorigin>
+
+<link rel="stylesheet"
+      href="./assets/css/app.css">
+
+<link rel="manifest"
+      href="./manifest.webmanifest">
+
+<!-- =====================================================
+     THREE.JS IMPORT MAP
+     ===================================================== -->
+
 <script type="importmap">
 {
   "imports": {
@@ -31,7 +58,14 @@
 }
 </script>
 
+
+<!-- =====================================================
+     CRITICAL UI CSS
+     Renders immediately before app.css finishes loading
+     ===================================================== -->
+
 <style>
+
 :root{
   --bg:#080a0e;
   --panel:#11141a;
@@ -48,92 +82,132 @@
 
 *{
   box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
 }
 
-html,body{
+html,
+body{
   margin:0;
+
   width:100%;
   min-height:100%;
+
   background:var(--bg);
   color:var(--text);
+
   font-family:
     -apple-system,
     BlinkMacSystemFont,
     "SF Pro Display",
+    "SF Pro Text",
     "Segoe UI",
     sans-serif;
+
   overscroll-behavior:none;
+
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
 }
 
 body{
   min-height:100vh;
   min-height:100dvh;
+
+  overflow-x:hidden;
 }
 
-button,input,select{
+button,
+input,
+select{
   font:inherit;
 }
 
 button{
   color:inherit;
+  touch-action:manipulation;
 }
+
+
+/* =====================================================
+   APPLICATION
+   ===================================================== */
 
 #forge3d{
   width:100%;
+
   min-height:100vh;
   min-height:100dvh;
 
   padding:
-    calc(env(safe-area-inset-top) + 6px)
-    6px
-    calc(env(safe-area-inset-bottom) + 6px);
+    calc(env(safe-area-inset-top) + 5px)
+    calc(env(safe-area-inset-right) + 5px)
+    calc(env(safe-area-inset-bottom) + 5px)
+    calc(env(safe-area-inset-left) + 5px);
 
   background:
     radial-gradient(
-      circle at 50% -20%,
-      #172130,
-      #0c1016 38%,
-      #080a0e 75%
+      circle at 50% -15%,
+      #182333 0,
+      #0d1118 35%,
+      #080a0e 72%
     );
 }
 
 .f-app{
   width:100%;
   max-width:1500px;
-  margin:auto;
+
+  margin:0 auto;
 }
 
-/* HEADER */
+
+/* =====================================================
+   BRAND HEADER
+   ===================================================== */
 
 .lf-header{
-  height:48px;
+  height:47px;
+
   display:flex;
   align-items:center;
+
   gap:9px;
 
-  margin-bottom:6px;
+  margin-bottom:5px;
+
   padding:0 10px;
 
   border:1px solid var(--border);
   border-radius:13px;
 
-  background:#12151b;
+  background:rgba(18,21,27,.96);
 }
 
 .lf-logo{
-  width:30px;
-  height:30px;
-  flex:0 0 30px;
+  width:29px;
+  height:29px;
+
+  flex:0 0 29px;
 
   display:grid;
   place-items:center;
 
   border-radius:8px;
 
-  background:linear-gradient(145deg,#299cff,#006ee6);
+  background:
+    linear-gradient(
+      145deg,
+      #299cff,
+      #006ce5
+    );
 
-  font-size:12px;
+  color:white;
+
+  font-size:10px;
   font-weight:900;
+
+  box-shadow:
+    0 4px 15px rgba(10,132,255,.22);
 }
 
 .lf-brand{
@@ -143,12 +217,17 @@ button{
 .lf-name{
   font-size:13px;
   font-weight:850;
+
+  line-height:1.05;
 }
 
 .lf-sub{
-  margin-top:1px;
+  margin-top:3px;
+
   color:var(--muted);
-  font-size:9px;
+
+  font-size:8px;
+  font-weight:600;
 }
 
 .lf-engine{
@@ -156,6 +235,7 @@ button{
 
   display:flex;
   align-items:center;
+
   gap:6px;
 
   padding:6px 9px;
@@ -167,7 +247,7 @@ button{
 
   color:#a8b0bc;
 
-  font-size:9px;
+  font-size:8px;
   font-weight:750;
 }
 
@@ -179,46 +259,61 @@ button{
 
   background:var(--orange);
 
-  box-shadow:0 0 8px var(--orange);
+  box-shadow:
+    0 0 8px var(--orange);
 
-  animation:pulse 1.2s infinite;
+  animation:
+    lfPulse 1s ease-in-out infinite;
 }
 
-body.engine-ready .lf-dot{
+body.lf-ready .lf-dot{
   background:var(--green);
-  box-shadow:0 0 8px var(--green);
+
+  box-shadow:
+    0 0 8px var(--green);
+
   animation:none;
 }
 
-@keyframes pulse{
-  0%,100%{opacity:.35}
-  50%{opacity:1}
+@keyframes lfPulse{
+  0%,100%{
+    opacity:.4;
+  }
+
+  50%{
+    opacity:1;
+  }
 }
 
-/* TOP BAR */
+
+/* =====================================================
+   TOOL BARS
+   ===================================================== */
 
 .f-bar,
 .f-stagebar{
   display:flex;
   align-items:center;
+
   gap:5px;
 
-  border:1px solid var(--border);
-
   background:#12151b;
+
+  border:1px solid var(--border);
 }
 
 .f-bar{
-  min-height:48px;
+  min-height:47px;
 
-  margin-bottom:6px;
+  margin-bottom:5px;
+
   padding:5px;
 
   border-radius:13px;
 }
 
 .f-stagebar{
-  min-height:47px;
+  min-height:45px;
 
   padding:5px;
 
@@ -232,7 +327,7 @@ body.engine-ready .lf-dot{
 .f-btn,
 .f-tab,
 .f-tool{
-  min-height:38px;
+  min-height:37px;
 
   border:1px solid var(--border);
 
@@ -242,21 +337,30 @@ body.engine-ready .lf-dot{
 
   background:#1b2028;
 
-  color:#b6bfcb;
+  color:#bac3cf;
 
-  font-size:11px;
+  font-size:10px;
   font-weight:750;
 
   cursor:pointer;
+
+  user-select:none;
+  -webkit-user-select:none;
 }
 
 .f-btn.active,
 .f-tab.active,
 .f-tool.active,
 .f-primary{
-  background:linear-gradient(#168eff,#0875e5);
   border-color:#2b96ff;
-  color:white;
+
+  background:
+    linear-gradient(
+      #168eff,
+      #0875e5
+    );
+
+  color:#fff;
 }
 
 .f-btn:disabled,
@@ -264,21 +368,28 @@ body.engine-ready .lf-dot{
   opacity:.38;
 }
 
-/* EDITOR */
+
+/* =====================================================
+   MAIN EDITOR
+   ===================================================== */
 
 .f-layout{
   display:grid;
-  grid-template-columns:230px minmax(0,1fr) 275px;
 
-  gap:6px;
+  grid-template-columns:
+    230px
+    minmax(0,1fr)
+    275px;
+
+  gap:5px;
 }
 
 .f-panel,
 .f-stage{
+  overflow:hidden;
+
   border:1px solid var(--border);
   border-radius:13px;
-
-  overflow:hidden;
 
   background:var(--panel);
 }
@@ -295,31 +406,36 @@ body.engine-ready .lf-dot{
 }
 
 .f-head{
-  min-height:43px;
+  min-height:42px;
 
   display:flex;
   align-items:center;
 
   padding:0 11px;
 
-  border-bottom:1px solid var(--border);
+  border-bottom:
+    1px solid var(--border);
 
   background:#151920;
 
   color:#cbd2dc;
 
-  font-size:10px;
+  font-size:9px;
   font-weight:850;
 
   text-transform:uppercase;
-  letter-spacing:.06em;
+
+  letter-spacing:.07em;
 }
 
 .f-body{
   padding:9px;
 }
 
-/* VIEWPORT */
+
+/* =====================================================
+   3D VIEWPORT
+   ===================================================== */
 
 .f-view{
   position:relative;
@@ -331,216 +447,258 @@ body.engine-ready .lf-dot{
 
   overflow:hidden;
 
-  background:
-    radial-gradient(
-      circle at 50% 38%,
-      #202630,
-      #12161d 48%,
-      #090c10 100%
-    );
+  background:#11161d;
 
   touch-action:none;
 }
 
 .f-view canvas{
   position:absolute;
+
   inset:0;
+
+  z-index:5;
 
   display:block;
 
   width:100%!important;
   height:100%!important;
 
-  z-index:3;
-
   touch-action:none;
 }
 
-/* FALLBACK VIEWPORT */
 
-.lf-fallback{
+/* =====================================================
+   INSTANT VIEWPORT FALLBACK
+
+   Displays immediately while WebGL/Three loads.
+   ===================================================== */
+
+.lf-viewport-placeholder{
   position:absolute;
+
   inset:0;
 
   z-index:1;
 
   overflow:hidden;
 
-  transition:opacity .3s ease;
+  background:
+    radial-gradient(
+      circle at 50% 32%,
+      #202833 0,
+      #12171e 45%,
+      #090c11 100%
+    );
+
+  transition:
+    opacity .18s ease;
 }
 
-.f-view.has-canvas .lf-fallback{
+.f-view.lf-canvas-ready
+.lf-viewport-placeholder{
   opacity:0;
+
   pointer-events:none;
 }
 
 .lf-grid{
   position:absolute;
 
-  width:160%;
-  height:100%;
-
   left:-30%;
   top:44%;
 
+  width:160%;
+  height:100%;
+
   background-image:
+
     linear-gradient(
-      rgba(100,130,160,.24) 1px,
+      rgba(93,117,142,.23) 1px,
       transparent 1px
     ),
+
     linear-gradient(
       90deg,
-      rgba(100,130,160,.24) 1px,
+      rgba(93,117,142,.23) 1px,
       transparent 1px
     );
 
-  background-size:36px 36px;
+  background-size:
+    34px 34px;
 
   transform:
     perspective(500px)
     rotateX(63deg);
 
-  transform-origin:center top;
+  transform-origin:
+    center top;
 }
 
-.lf-cube{
+
+/* placeholder cube */
+
+.lf-placeholder-cube{
   position:absolute;
 
   left:50%;
-  top:42%;
+  top:41%;
 
-  width:90px;
-  height:90px;
+  width:82px;
+  height:82px;
 
   transform:
     translate(-50%,-50%)
     rotate(45deg);
 
-  border:1px solid #399cff;
+  border:
+    1px solid rgba(53,158,255,.85);
 
-  background:rgba(10,132,255,.12);
+  background:
+    rgba(10,132,255,.10);
 
   box-shadow:
-    inset 0 0 25px rgba(10,132,255,.15),
-    0 20px 50px rgba(0,0,0,.35);
 
-  animation:cubeFloat 3s ease-in-out infinite;
+    inset
+    0 0 24px
+    rgba(10,132,255,.12),
+
+    0 18px 50px
+    rgba(0,0,0,.35);
 }
 
-@keyframes cubeFloat{
-  0%,100%{
-    transform:
-      translate(-50%,-50%)
-      rotate(45deg);
-  }
 
-  50%{
-    transform:
-      translate(-50%,-56%)
-      rotate(52deg);
-  }
-}
+/* =====================================================
+   FAST LOADING INDICATOR
+   ===================================================== */
 
-.lf-loading{
+.lf-boot{
   position:absolute;
 
+  z-index:2;
+
   left:50%;
-  top:65%;
+  top:63%;
 
-  transform:translate(-50%,-50%);
+  transform:
+    translate(-50%,-50%);
 
-  width:240px;
+  width:min(250px,70%);
 
   text-align:center;
 }
 
 .lf-spinner{
-  width:27px;
-  height:27px;
+  width:22px;
+  height:22px;
 
-  margin:0 auto 10px;
+  margin:
+    0 auto 9px;
 
-  border:2px solid rgba(255,255,255,.12);
-  border-top-color:#299cff;
+  border:
+    2px solid rgba(255,255,255,.10);
+
+  border-top-color:
+    #299cff;
 
   border-radius:50%;
 
-  animation:spin .7s linear infinite;
+  animation:
+    lfSpin .65s linear infinite;
 }
 
-@keyframes spin{
-  to{transform:rotate(360deg)}
+@keyframes lfSpin{
+  to{
+    transform:
+      rotate(360deg);
+  }
 }
 
-.lf-load-title{
-  color:#dce3ec;
+.lf-boot-title{
+  color:#dbe3ec;
 
-  font-size:12px;
+  font-size:10px;
   font-weight:800;
 }
 
-.lf-load-sub{
-  margin-top:4px;
+.lf-boot-sub{
+  margin-top:3px;
 
-  color:#7f8998;
+  color:#788493;
 
-  font-size:9px;
+  font-size:8px;
 }
 
-/* OVERLAY */
+
+/* =====================================================
+   VIEWPORT OVERLAY
+   ===================================================== */
 
 .f-overlay{
   position:absolute;
 
-  z-index:6;
+  z-index:10;
 
   left:8px;
   bottom:8px;
 
-  max-width:calc(100% - 16px);
+  max-width:
+    calc(100% - 16px);
 
-  padding:6px 8px;
+  padding:
+    5px 8px;
 
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:8px;
+  border:
+    1px solid
+    rgba(255,255,255,.07);
 
-  background:rgba(4,6,9,.72);
+  border-radius:7px;
+
+  background:
+    rgba(4,6,9,.72);
 
   color:#aab3c0;
 
-  font-size:9px;
+  font-size:8px;
 
   pointer-events:none;
 }
 
 .f-status{
-  min-height:33px;
+  min-height:31px;
 
   display:flex;
   align-items:center;
 
-  padding:0 10px;
+  padding:
+    0 10px;
 
-  border-top:1px solid var(--border);
+  border-top:
+    1px solid var(--border);
 
   background:#101319;
 
   color:#8993a2;
 
-  font-size:9px;
+  font-size:8px;
 }
 
-/* DYNAMIC UI */
+
+/* =====================================================
+   DYNAMIC TOOL UI
+   ===================================================== */
 
 .f-label{
-  margin:7px 0 6px;
+  margin:
+    7px 0 6px;
 
   color:#7f8998;
 
-  font-size:9px;
+  font-size:8px;
   font-weight:850;
 
   text-transform:uppercase;
+
   letter-spacing:.07em;
 }
 
@@ -556,13 +714,17 @@ body.engine-ready .lf-dot{
   display:grid;
 
   grid-template-columns:
-    repeat(2,minmax(0,1fr));
+    repeat(
+      2,
+      minmax(0,1fr)
+    );
 
   gap:5px;
 }
 
 .f-tool{
-  padding:0 6px;
+  padding:
+    0 6px;
 }
 
 .f-field{
@@ -576,7 +738,7 @@ body.engine-ready .lf-dot{
 
   color:#9da7b4;
 
-  font-size:9px;
+  font-size:8px;
   font-weight:700;
 }
 
@@ -584,11 +746,13 @@ body.engine-ready .lf-dot{
 .f-field select{
   width:100%;
 
-  min-height:38px;
+  min-height:37px;
 
-  padding:5px 7px;
+  padding:
+    5px 7px;
 
-  border:1px solid var(--border2);
+  border:
+    1px solid var(--border2);
 
   border-radius:8px;
 
@@ -601,32 +765,47 @@ body.engine-ready .lf-dot{
 
 .f-field input:focus,
 .f-field select:focus{
-  border-color:var(--blue);
+  border-color:
+    var(--blue);
 }
 
 .f-grid2{
   display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
+
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0,1fr)
+    );
+
   gap:5px;
 }
 
 .f-grid3{
   display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0,1fr)
+    );
+
   gap:5px;
 }
 
 .f-range-row{
   display:grid;
 
-  grid-template-columns:1fr 64px;
+  grid-template-columns:
+    1fr 64px;
 
   gap:5px;
 
   align-items:center;
 }
 
-.f-range-row input[type=range]{
+.f-range-row
+input[type="range"]{
   padding:0;
 }
 
@@ -634,13 +813,14 @@ body.engine-ready .lf-dot{
 .f-msg{
   color:#8993a2;
 
-  font-size:9px;
+  font-size:8px;
 
   line-height:1.5;
 }
 
 .f-checks{
   display:flex;
+
   flex-wrap:wrap;
 
   gap:5px;
@@ -652,21 +832,29 @@ body.engine-ready .lf-dot{
 
   gap:5px;
 
-  min-height:35px;
+  min-height:34px;
 
-  padding:0 7px;
+  padding:
+    0 7px;
 
-  border:1px solid var(--border);
+  border:
+    1px solid var(--border);
 
   border-radius:8px;
 
   color:#aab3bf;
 
-  font-size:9px;
+  font-size:8px;
 }
+
+
+/* =====================================================
+   NODES
+   ===================================================== */
 
 .f-node-list{
   display:flex;
+
   flex-direction:column;
 
   gap:5px;
@@ -675,15 +863,19 @@ body.engine-ready .lf-dot{
 .f-node{
   padding:8px;
 
-  border:1px solid var(--border);
+  border:
+    1px solid var(--border);
 
   border-radius:8px;
 
   background:#191e25;
+
+  cursor:pointer;
 }
 
 .f-node.selected{
-  border-color:var(--blue);
+  border-color:
+    var(--blue);
 
   background:#13243a;
 }
@@ -694,11 +886,12 @@ body.engine-ready .lf-dot{
 
 .f-node-title{
   display:flex;
+
   align-items:center;
 
   gap:6px;
 
-  font-size:10px;
+  font-size:9px;
   font-weight:800;
 }
 
@@ -719,24 +912,29 @@ body.engine-ready .lf-dot{
   background:#ff9f0a;
 }
 
-.f-node.source .f-dot{
+.f-node.source
+.f-dot{
   background:#30d158;
 }
 
-.f-node.transform .f-dot{
+.f-node.transform
+.f-dot{
   background:#0a84ff;
 }
 
-.f-node.material .f-dot{
+.f-node.material
+.f-dot{
   background:#bf5af2;
 }
 
-.f-node.output .f-dot{
+.f-node.output
+.f-dot{
   background:#8e8e93;
 }
 
 .f-node-actions{
   display:flex;
+
   flex-wrap:wrap;
 
   gap:4px;
@@ -745,9 +943,10 @@ body.engine-ready .lf-dot{
 }
 
 .f-mini{
-  min-height:28px;
+  min-height:27px;
 
-  border:1px solid var(--border);
+  border:
+    1px solid var(--border);
 
   border-radius:6px;
 
@@ -760,17 +959,20 @@ body.engine-ready .lf-dot{
 
 .f-presets{
   display:flex;
+
   flex-wrap:wrap;
 
   gap:5px;
 }
 
 .f-chip{
-  min-height:31px;
+  min-height:30px;
 
-  padding:0 9px;
+  padding:
+    0 9px;
 
-  border:1px solid var(--border);
+  border:
+    1px solid var(--border);
 
   border-radius:16px;
 
@@ -778,61 +980,91 @@ body.engine-ready .lf-dot{
 
   color:#b4bdc8;
 
-  font-size:9px;
+  font-size:8px;
 }
 
 .f-color{
-  height:40px;
-  padding:3px!important;
+  height:39px;
+
+  padding:
+    3px!important;
 }
 
-/* TABLET */
 
-@media(max-width:1050px){
+/* =====================================================
+   TABLET
+   ===================================================== */
+
+@media(
+  max-width:1050px
+){
 
   .f-layout{
     grid-template-columns:
-      205px minmax(0,1fr);
+      200px
+      minmax(0,1fr);
   }
 
   .f-right{
-    grid-column:1/-1;
+    grid-column:
+      1/-1;
 
     min-height:0;
   }
 
 }
 
-/* MOBILE */
 
-@media(max-width:720px){
+/* =====================================================
+   iPHONE / MOBILE
+   ===================================================== */
+
+@media(
+  max-width:720px
+){
 
   #forge3d{
     padding:
-      calc(env(safe-area-inset-top) + 4px)
-      4px
-      calc(env(safe-area-inset-bottom) + 4px);
+      calc(
+        env(safe-area-inset-top)
+        + 3px
+      )
+      calc(
+        env(safe-area-inset-right)
+        + 3px
+      )
+      calc(
+        env(safe-area-inset-bottom)
+        + 3px
+      )
+      calc(
+        env(safe-area-inset-left)
+        + 3px
+      );
   }
 
   .lf-header{
-    height:44px;
+    height:42px;
 
-    margin-bottom:4px;
+    margin-bottom:3px;
 
-    border-radius:11px;
+    padding:
+      0 8px;
+
+    border-radius:10px;
   }
 
   .lf-logo{
-    width:27px;
-    height:27px;
+    width:26px;
+    height:26px;
 
-    flex-basis:27px;
+    flex-basis:26px;
 
-    font-size:10px;
+    font-size:9px;
   }
 
   .lf-name{
-    font-size:12px;
+    font-size:11px;
   }
 
   .lf-sub{
@@ -840,27 +1072,32 @@ body.engine-ready .lf-dot{
   }
 
   .lf-engine{
-    padding:5px 7px;
+    padding:
+      5px 7px;
 
-    font-size:8px;
+    font-size:7px;
   }
 
   .f-bar{
     position:sticky;
 
-    top:calc(env(safe-area-inset-top) + 3px);
+    top:
+      calc(
+        env(safe-area-inset-top)
+        + 2px
+      );
 
     z-index:30;
 
-    min-height:45px;
+    min-height:43px;
 
-    margin-bottom:4px;
+    margin-bottom:3px;
 
-    padding:4px;
+    padding:3px;
 
     gap:3px;
 
-    border-radius:11px;
+    border-radius:10px;
   }
 
   .f-tab{
@@ -868,14 +1105,16 @@ body.engine-ready .lf-dot{
 
     min-width:0;
 
-    min-height:36px;
+    min-height:35px;
 
-    padding:0 3px;
+    padding:
+      0 3px;
 
-    font-size:10px;
+    font-size:9px;
   }
 
-  .f-bar .f-spacer{
+  .f-bar
+  .f-spacer{
     display:none;
   }
 
@@ -891,13 +1130,13 @@ body.engine-ready .lf-dot{
 
     flex-direction:column;
 
-    gap:4px;
+    gap:3px;
   }
 
   .f-stage{
     order:1;
 
-    border-radius:11px;
+    border-radius:10px;
   }
 
   .f-left{
@@ -905,7 +1144,7 @@ body.engine-ready .lf-dot{
 
     min-height:0;
 
-    border-radius:11px;
+    border-radius:10px;
   }
 
   .f-right{
@@ -913,40 +1152,42 @@ body.engine-ready .lf-dot{
 
     min-height:0;
 
-    border-radius:11px;
+    border-radius:10px;
   }
 
   .f-stagebar{
-    min-height:43px;
+    min-height:41px;
 
-    padding:4px;
+    padding:3px;
 
     gap:3px;
   }
 
-  .f-stagebar .f-btn{
+  .f-stagebar
+  .f-btn{
     flex:1;
 
     min-width:0;
 
-    min-height:35px;
+    min-height:34px;
 
-    padding:0 4px;
+    padding:
+      0 3px;
 
-    font-size:9px;
+    font-size:8px;
   }
 
   .f-view{
-    min-height:55vh;
-    min-height:55dvh;
+    min-height:54vh;
+    min-height:54dvh;
 
     max-height:650px;
   }
 
   .f-head{
-    min-height:39px;
+    min-height:37px;
 
-    font-size:9px;
+    font-size:8px;
   }
 
   .f-body{
@@ -955,20 +1196,28 @@ body.engine-ready .lf-dot{
 
   .f-tools{
     grid-template-columns:
-      repeat(3,minmax(0,1fr));
+      repeat(
+        3,
+        minmax(0,1fr)
+      );
   }
 
   .f-tool{
-    min-height:37px;
+    min-height:36px;
 
-    font-size:9px;
+    font-size:8px;
   }
 
 }
 
-/* SMALL PHONES */
 
-@media(max-width:390px){
+/* =====================================================
+   SMALL iPHONE
+   ===================================================== */
+
+@media(
+  max-width:390px
+){
 
   .f-view{
     min-height:52vh;
@@ -977,19 +1226,34 @@ body.engine-ready .lf-dot{
 
   .f-tools{
     grid-template-columns:
-      repeat(2,minmax(0,1fr));
+      repeat(
+        2,
+        minmax(0,1fr)
+      );
   }
 
 }
 
 </style>
+
 </head>
+
 
 <body>
 
-<main id="forge3d">
+
+<main
+  id="forge3d"
+  class="forge3d"
+>
+
 
 <div class="f-app">
+
+
+<!-- =====================================================
+     HEADER
+     ===================================================== -->
 
 <header class="lf-header">
 
@@ -1004,23 +1268,28 @@ body.engine-ready .lf-dot{
     </div>
 
     <div class="lf-sub">
-      Three.js Modeling Workspace
+      Mobile 3D Modeling Workspace
     </div>
 
   </div>
+
 
   <div class="lf-engine">
 
     <span class="lf-dot"></span>
 
     <span id="lf-engine-text">
-      Starting
+      Loading
     </span>
 
   </div>
 
 </header>
 
+
+<!-- =====================================================
+     WORKSPACE BAR
+     ===================================================== -->
 
 <nav class="f-bar">
 
@@ -1032,6 +1301,7 @@ body.engine-ready .lf-dot{
     Object
   </button>
 
+
   <button
     class="f-tab"
     type="button"
@@ -1039,6 +1309,7 @@ body.engine-ready .lf-dot{
   >
     Edit
   </button>
+
 
   <button
     class="f-tab"
@@ -1048,6 +1319,7 @@ body.engine-ready .lf-dot{
     Sculpt
   </button>
 
+
   <button
     class="f-tab"
     type="button"
@@ -1056,38 +1328,43 @@ body.engine-ready .lf-dot{
     Nodes
   </button>
 
+
   <div class="f-spacer"></div>
+
 
   <button
     class="f-btn"
-    id="f-undo"
     type="button"
+    id="f-undo"
     disabled
   >
     Undo
   </button>
 
+
   <button
     class="f-btn"
-    id="f-redo"
     type="button"
+    id="f-redo"
     disabled
   >
     Redo
   </button>
 
+
   <button
     class="f-btn"
-    id="f-frame"
     type="button"
+    id="f-frame"
   >
     Frame
   </button>
 
+
   <button
     class="f-btn"
-    id="f-wire"
     type="button"
+    id="f-wire"
   >
     Wire
   </button>
@@ -1095,10 +1372,16 @@ body.engine-ready .lf-dot{
 </nav>
 
 
+<!-- =====================================================
+     EDITOR
+     ===================================================== -->
+
 <div class="f-layout">
 
 
-<!-- LEFT PANEL -->
+<!-- =====================================================
+     LEFT TOOL PANEL
+     ===================================================== -->
 
 <section class="f-panel f-left">
 
@@ -1110,6 +1393,7 @@ body.engine-ready .lf-dot{
 
   </div>
 
+
   <div
     class="f-body"
     id="f-left"
@@ -1118,6 +1402,7 @@ body.engine-ready .lf-dot{
     <div class="f-label">
       Primitive
     </div>
+
 
     <div class="f-tools">
 
@@ -1151,10 +1436,12 @@ body.engine-ready .lf-dot{
 
     </div>
 
+
     <div class="f-divider"></div>
 
+
     <div class="f-help">
-      Initializing modeling tools…
+      Preparing modeling tools…
     </div>
 
   </div>
@@ -1162,43 +1449,51 @@ body.engine-ready .lf-dot{
 </section>
 
 
-<!-- VIEWPORT -->
+<!-- =====================================================
+     3D VIEWPORT
+     ===================================================== -->
 
 <section class="f-stage">
 
+
   <div class="f-stagebar">
+
 
     <button
       class="f-btn active"
-      data-gizmo="translate"
       type="button"
+      data-gizmo="translate"
     >
       Move
     </button>
 
+
     <button
       class="f-btn"
-      data-gizmo="rotate"
       type="button"
+      data-gizmo="rotate"
     >
       Rotate
     </button>
 
+
     <button
       class="f-btn"
-      data-gizmo="scale"
       type="button"
+      data-gizmo="scale"
     >
       Scale
     </button>
 
+
     <button
       class="f-btn"
-      id="f-space"
       type="button"
+      id="f-space"
     >
       World
     </button>
+
 
   </div>
 
@@ -1208,28 +1503,42 @@ body.engine-ready .lf-dot{
     id="f-view"
   >
 
+
+    <!--
+      Instant lightweight viewport.
+
+      app.js will insert the real WebGL
+      canvas into this same element.
+    -->
+
     <div
-      class="lf-fallback"
-      id="lf-fallback"
+      class="lf-viewport-placeholder"
+      id="lf-viewport-placeholder"
     >
+
 
       <div class="lf-grid"></div>
 
-      <div class="lf-cube"></div>
 
-      <div class="lf-loading">
+      <div class="lf-placeholder-cube"></div>
+
+
+      <div class="lf-boot">
 
         <div class="lf-spinner"></div>
 
-        <div class="lf-load-title">
-          Loading LocalForge 3D
+
+        <div class="lf-boot-title">
+          Starting 3D Engine
         </div>
 
-        <div class="lf-load-sub">
-          Initializing WebGL and modeling engine
+
+        <div class="lf-boot-sub">
+          Loading Three.js
         </div>
 
       </div>
+
 
     </div>
 
@@ -1238,8 +1547,9 @@ body.engine-ready .lf-dot{
       class="f-overlay"
       id="f-overlay"
     >
-      Orbit: one finger · Zoom/pan: two fingers
+      One finger: orbit · Two fingers: zoom/pan
     </div>
+
 
   </div>
 
@@ -1249,15 +1559,19 @@ body.engine-ready .lf-dot{
     id="f-status"
     aria-live="polite"
   >
-    Starting Three.js engine…
+    Initializing LocalForge…
   </div>
+
 
 </section>
 
 
-<!-- RIGHT PANEL -->
+<!-- =====================================================
+     RIGHT PROPERTIES PANEL
+     ===================================================== -->
 
 <section class="f-panel f-right">
+
 
   <div class="f-head">
 
@@ -1267,180 +1581,149 @@ body.engine-ready .lf-dot{
 
   </div>
 
+
   <div
     class="f-body"
     id="f-right"
   >
 
     <div class="f-label">
-      Engine
+      Model
     </div>
 
+
     <div class="f-help">
-      Waiting for LocalForge engine…
+      Preparing object properties…
     </div>
 
   </div>
+
 
 </section>
 
 
 </div>
 
+
 </div>
+
 
 </main>
 
 
 <!-- =====================================================
-     LOAD EXISTING APP
-     Cache-busting query is intentional for GitHub Pages.
+     EXISTING LOCALFORGE ENGINE
+
+     Keep your current app.js.
      ===================================================== -->
 
 <script
   type="module"
-  src="./assets/js/app.js?v=20260825-1"
+  src="./assets/js/app.js"
 ></script>
 
 
+<!-- =====================================================
+     FAST READY DETECTION
+
+     Does NOT wait 10 seconds.
+     Immediately detects the WebGL canvas.
+     ===================================================== -->
+
 <script>
+
 (() => {
 
   const view =
-    document.getElementById("f-view");
+    document.getElementById(
+      "f-view"
+    );
 
-  const status =
-    document.getElementById("f-status");
 
   const engineText =
-    document.getElementById("lf-engine-text");
+    document.getElementById(
+      "lf-engine-text"
+    );
 
 
-  function ready(){
+  if(!view)
+    return;
+
+
+  const markReady = () => {
 
     const canvas =
-      view.querySelector("canvas");
+      view.querySelector(
+        "canvas"
+      );
+
 
     if(!canvas)
       return false;
 
 
     view.classList.add(
-      "has-canvas"
+      "lf-canvas-ready"
     );
+
 
     document.body.classList.add(
-      "engine-ready"
+      "lf-ready"
     );
 
 
-    if(engineText)
+    if(engineText){
+
       engineText.textContent =
         "Ready";
+
+    }
 
 
     return true;
 
-  }
-
-
-  const observer =
-    new MutationObserver(() => {
-
-      if(ready())
-        observer.disconnect();
-
-    });
-
-
-  observer.observe(
-    view,
-    {
-      childList:true,
-      subtree:true
-    }
-  );
-
-
-  ready();
-
-
-  setTimeout(() => {
-
-    if(
-      !view.querySelector("canvas")
-    ){
-
-      if(engineText)
-        engineText.textContent =
-          "Load failed";
-
-
-      if(status)
-        status.textContent =
-          "app.js did not start — check assets/js/app.js.";
-
-    }
-
-  },10000);
-
-
-  window.addEventListener(
-    "error",
-    event => {
-
-      console.error(
-        "LocalForge:",
-        event.error ||
-        event.message
-      );
-
-    }
-  );
-
-
-  window.addEventListener(
-    "unhandledrejection",
-    event => {
-
-      console.error(
-        "LocalForge module:",
-        event.reason
-      );
-
-    }
-  );
+  };
 
 
   /*
-   * Register PWA only after everything else.
-   * A broken/stale service worker should not block boot.
+   * Usually app.js creates the canvas
+   * almost immediately after Three.js
+   * resolves.
    */
 
   if(
-    "serviceWorker" in navigator
+    !markReady()
   ){
 
-    window.addEventListener(
-      "load",
-      () => {
+    const observer =
+      new MutationObserver(
+        () => {
 
-        navigator
-          .serviceWorker
-          .register(
-            "./sw.js"
-          )
-          .catch(
-            console.warn
-          );
+          if(
+            markReady()
+          ){
 
+            observer.disconnect();
+
+          }
+
+        }
+      );
+
+
+    observer.observe(
+      view,
+      {
+        childList:true
       }
     );
 
   }
 
 })();
+
 </script>
+
 
 </body>
 </html>
