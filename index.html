@@ -1,46 +1,448 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#0e1014">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="LocalForge 3D">
-<title>LocalForge 3D</title>
-<link rel="manifest" href="./manifest.webmanifest">
-<link rel="stylesheet" href="./assets/css/app.css">
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no"
+  >
+
+  <meta name="theme-color" content="#0e1014">
+  <meta name="color-scheme" content="dark">
+
+  <!-- iPhone / iPad standalone web-app support -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LocalForge 3D">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <meta
+    name="description"
+    content="LocalForge 3D — mobile-friendly browser-based 3D modeling, sculpting and procedural geometry."
+  >
+
+  <title>LocalForge 3D</title>
+
+  <!-- Existing LocalForge files -->
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./assets/css/app.css">
+
+  <!--
+    Three.js import map.
+
+    IMPORTANT:
+    This makes the Three.js addon imports inside app.js resolve
+    correctly on GitHub Pages and mobile Safari.
+  -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.185.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.185.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <!-- Small critical fallback so viewport remains usable even
+       before app.css finishes loading. -->
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100%;
+      background: #0e1014;
+      color: #f5f6f8;
+      overscroll-behavior: none;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+
+      padding-top: env(safe-area-inset-top);
+      padding-right: env(safe-area-inset-right);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+
+      box-sizing: border-box;
+    }
+
+    #forge3d {
+      width: 100%;
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+
+    #f-view {
+      position: relative;
+      width: 100%;
+      min-height: 390px;
+      background: #13161b;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    #f-view canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+      touch-action: none;
+    }
+
+    @media (max-width: 720px) {
+      #f-view {
+        min-height: 52vh;
+        min-height: 52dvh;
+      }
+    }
+
+    @media (max-width: 430px) {
+      #f-view {
+        min-height: 48vh;
+        min-height: 48dvh;
+      }
+    }
+  </style>
 </head>
+
 <body>
+
 <main id="forge3d" class="forge3d">
-<div class="f-app">
- <div class="f-bar">
-  <button class="f-tab active" type="button" data-work="object">Object</button>
-  <button class="f-tab" type="button" data-work="edit">Edit</button>
-  <button class="f-tab" type="button" data-work="sculpt">Sculpt</button>
-  <button class="f-tab" type="button" data-work="nodes">Nodes</button>
-  <div class="f-spacer"></div>
-  <button class="f-btn" type="button" id="f-undo">Undo</button>
-  <button class="f-btn" type="button" id="f-redo">Redo</button>
-  <button class="f-btn" type="button" id="f-frame">Frame</button>
-  <button class="f-btn" type="button" id="f-wire">Wire</button>
- </div>
- <div class="f-layout">
-  <section class="f-panel f-left"><div class="f-head"><span id="f-left-title">Object Tools</span></div><div class="f-body" id="f-left"></div></section>
-  <section class="f-stage">
-   <div class="f-stagebar">
-    <button class="f-btn active" type="button" data-gizmo="translate">Move</button>
-    <button class="f-btn" type="button" data-gizmo="rotate">Rotate</button>
-    <button class="f-btn" type="button" data-gizmo="scale">Scale</button>
-    <button class="f-btn" type="button" id="f-space">World</button>
-   </div>
-   <div class="f-view" id="f-view"><div class="f-overlay" id="f-overlay">Orbit: one finger / mouse drag · Zoom/pan: two fingers</div></div>
-   <div class="f-status" id="f-status" aria-live="polite">Loading Three.js modeling engine…</div>
-  </section>
-  <section class="f-panel f-right"><div class="f-head"><span id="f-right-title">Properties</span></div><div class="f-body" id="f-right"></div></section>
- </div>
-</div>
+
+  <div class="f-app">
+
+    <!-- =====================================================
+         MAIN MODE BAR
+         ===================================================== -->
+
+    <div class="f-bar">
+
+      <button
+        class="f-tab active"
+        type="button"
+        data-work="object"
+      >
+        Object
+      </button>
+
+      <button
+        class="f-tab"
+        type="button"
+        data-work="edit"
+      >
+        Edit
+      </button>
+
+      <button
+        class="f-tab"
+        type="button"
+        data-work="sculpt"
+      >
+        Sculpt
+      </button>
+
+      <button
+        class="f-tab"
+        type="button"
+        data-work="nodes"
+      >
+        Nodes
+      </button>
+
+      <div class="f-spacer"></div>
+
+      <button
+        class="f-btn"
+        type="button"
+        id="f-undo"
+        disabled
+      >
+        Undo
+      </button>
+
+      <button
+        class="f-btn"
+        type="button"
+        id="f-redo"
+        disabled
+      >
+        Redo
+      </button>
+
+      <button
+        class="f-btn"
+        type="button"
+        id="f-frame"
+      >
+        Frame
+      </button>
+
+      <button
+        class="f-btn"
+        type="button"
+        id="f-wire"
+      >
+        Wire
+      </button>
+
+    </div>
+
+
+    <!-- =====================================================
+         EDITOR
+         ===================================================== -->
+
+    <div class="f-layout">
+
+
+      <!-- LEFT TOOL PANEL -->
+
+      <section
+        class="f-panel f-left"
+        aria-label="Modeling tools"
+      >
+
+        <div class="f-head">
+          <span id="f-left-title">
+            Object Tools
+          </span>
+        </div>
+
+        <div
+          class="f-body"
+          id="f-left"
+        >
+          <div class="f-help">
+            Initializing modeling tools…
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ===================================================
+           THREE.JS VIEWPORT
+           =================================================== -->
+
+      <section
+        class="f-stage"
+        aria-label="3D viewport"
+      >
+
+        <div class="f-stagebar">
+
+          <button
+            class="f-btn active"
+            type="button"
+            data-gizmo="translate"
+          >
+            Move
+          </button>
+
+          <button
+            class="f-btn"
+            type="button"
+            data-gizmo="rotate"
+          >
+            Rotate
+          </button>
+
+          <button
+            class="f-btn"
+            type="button"
+            data-gizmo="scale"
+          >
+            Scale
+          </button>
+
+          <button
+            class="f-btn"
+            type="button"
+            id="f-space"
+          >
+            World
+          </button>
+
+        </div>
+
+
+        <!--
+          app.js creates the WebGLRenderer and inserts
+          its canvas into this element.
+        -->
+
+        <div
+          class="f-view"
+          id="f-view"
+        >
+
+          <div
+            class="f-overlay"
+            id="f-overlay"
+          >
+            Orbit: one finger / mouse drag · Zoom/pan: two fingers
+          </div>
+
+        </div>
+
+
+        <div
+          class="f-status"
+          id="f-status"
+          role="status"
+          aria-live="polite"
+        >
+          Loading LocalForge 3D engine…
+        </div>
+
+      </section>
+
+
+      <!-- RIGHT PROPERTY PANEL -->
+
+      <section
+        class="f-panel f-right"
+        aria-label="Properties"
+      >
+
+        <div class="f-head">
+          <span id="f-right-title">
+            Properties
+          </span>
+        </div>
+
+        <div
+          class="f-body"
+          id="f-right"
+        >
+          <div class="f-help">
+            Loading properties…
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+
+  </div>
+
 </main>
-<script type="module" src="./assets/js/app.js"></script>
+
+
+<!-- =========================================================
+     LOCALFORGE MODELING ENGINE
+
+     Keep your existing:
+     assets/js/app.js
+     ========================================================= -->
+
+<script
+  type="module"
+  src="./assets/js/app.js">
+</script>
+
+
+<!-- =========================================================
+     PWA / OFFLINE SUPPORT
+
+     Keep your existing sw.js.
+     ========================================================= -->
+
+<script>
+(() => {
+  "use strict";
+
+  const statusElement =
+    document.getElementById("f-status");
+
+  /*
+   * Display uncaught JavaScript failures inside the application
+   * instead of leaving an unexplained empty viewport on iPhone.
+   */
+  window.addEventListener("error", event => {
+
+    console.error(
+      "LocalForge runtime error:",
+      event.error || event.message
+    );
+
+    if (
+      statusElement &&
+      !document.querySelector("#f-view canvas")
+    ) {
+      statusElement.textContent =
+        "LocalForge engine error — reload the page or check app.js.";
+    }
+
+  });
+
+
+  /*
+   * Catch failed ES-module imports as well.
+   */
+  window.addEventListener(
+    "unhandledrejection",
+    event => {
+
+      console.error(
+        "LocalForge module error:",
+        event.reason
+      );
+
+      if (
+        statusElement &&
+        !document.querySelector("#f-view canvas")
+      ) {
+        statusElement.textContent =
+          "3D engine failed to initialize. Reload LocalForge 3D.";
+      }
+
+    }
+  );
+
+
+  /*
+   * Register the existing LocalForge service worker.
+   */
+  if ("serviceWorker" in navigator) {
+
+    window.addEventListener("load", async () => {
+
+      try {
+
+        await navigator.serviceWorker.register(
+          "./sw.js",
+          {
+            scope: "./"
+          }
+        );
+
+        console.log(
+          "LocalForge 3D service worker ready."
+        );
+
+      } catch (error) {
+
+        /*
+         * A service-worker failure should NOT stop
+         * the modeling application from running.
+         */
+        console.warn(
+          "Service worker registration failed:",
+          error
+        );
+
+      }
+
+    });
+
+  }
+
+})();
+</script>
+
 </body>
 </html>
