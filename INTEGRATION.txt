@@ -1,0 +1,50 @@
+LOCALFORGE INTEGRATION PATCH
+
+1) bootstrap.js
+After:
+    await applicationReady;
+
+Add:
+    try {
+        const features = await import("./features.js");
+
+        if (typeof features.initializeFeatures === "function") {
+            await features.initializeFeatures();
+        }
+    } catch (error) {
+        console.warn("[LocalForge] Features unavailable:", error);
+    }
+
+2) sw.js
+Add these entries to CORE:
+    "./features.js",
+    "./updates.js",
+
+Also add this message handler anywhere at top level:
+
+self.addEventListener("message", event => {
+    if (event.data?.type === "SKIP_WAITING") {
+        self.skipWaiting();
+    }
+});
+
+3) build.json
+Bump version whenever you publish a release. Example:
+{
+  "name": "LocalForge 3D",
+  "version": "1.3.0",
+  "engine": "three",
+  "threeVersion": "0.185.1",
+  "channel": "development",
+  "platform": "web",
+  "startup": "bootstrap.js",
+  "application": "app.js",
+  "runtime": "runtime.js",
+  "database": "database.js",
+  "autosave": "autosave.js",
+  "features": "features.js",
+  "updates": "updates.js",
+  "serviceWorker": "sw.js"
+}
+
+No index.html changes are required.
