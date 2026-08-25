@@ -2,6 +2,20 @@
 ==============================================================
  LocalForge 3D
  bootstrap.js
+
+ Single application startup controller
+
+ index.html
+   ↓
+ bootstrap.js
+   ├─ build.json
+   ├─ runtime.js
+   ├─ database.js
+   ├─ autosave.js
+   ├─ app.js
+   ├─ features.js
+   │    └─ updates.js
+   └─ sw.js
 ==============================================================
 */
 
@@ -23,10 +37,10 @@ let booted = false;
 
 
 /* =========================================================
-   UI STATUS
+   STATUS
 ========================================================= */
 
-function status(
+function setStatus(
     message,
     state = "loading"
 ) {
@@ -38,24 +52,28 @@ function status(
 
 
     if (STATUS) {
+
         STATUS.textContent =
             message;
     }
 
 
     if (ENGINE_STATE) {
+
         ENGINE_STATE.textContent =
             message;
     }
 
 
     if (ENGINE_DOT) {
+
         ENGINE_DOT.dataset.state =
             state;
     }
 
 
     if (ROOT) {
+
         ROOT.dataset.forgeState =
             state;
     }
@@ -63,7 +81,7 @@ function status(
 
 
 /* =========================================================
-   ERROR
+   FAILURE
 ========================================================= */
 
 function fail(error) {
@@ -80,10 +98,33 @@ function fail(error) {
     );
 
 
-    status(
-        "Engine Error: " + message,
-        "error"
-    );
+    if (ROOT) {
+
+        ROOT.dataset.forgeState =
+            "error";
+    }
+
+
+    if (ENGINE_STATE) {
+
+        ENGINE_STATE.textContent =
+            "Engine Error";
+    }
+
+
+    if (ENGINE_DOT) {
+
+        ENGINE_DOT.dataset.state =
+            "error";
+    }
+
+
+    if (STATUS) {
+
+        STATUS.textContent =
+            "Engine Error: " +
+            message;
+    }
 
 
     window.__LOCALFORGE_BOOT_ERROR__ =
@@ -92,48 +133,83 @@ function fail(error) {
 
 
 /* =========================================================
-   BUILD INFO
+   BUILD INFORMATION
 ========================================================= */
 
 async function loadBuild() {
 
     try {
 
+        const url =
+            new URL(
+                "./build.json",
+                location.href
+            );
+
+
+        /*
+         Prevent stale build.json from causing
+         update detection problems.
+        */
+
+        url.searchParams.set(
+            "_lf",
+            String(Date.now())
+        );
+
+
         const response =
             await fetch(
-                "./build.json",
+                url.href,
                 {
-                    cache: "no-store"
+                    cache:
+                        "no-store"
                 }
             );
 
 
         if (!response.ok) {
-            return null;
+
+            throw new Error(
+                `build.json returned ${response.status}`
+            );
         }
 
 
-        const data =
+        const build =
             await response.json();
 
 
+        /*
+         Both names are supported because updates.js
+         understands either form.
+        */
+
         window.LocalForgeBuild =
-            data;
+            build;
+
+        window.LOCALFORGE_BUILD =
+            build;
 
 
         console.log(
-            "[LocalForge] Build",
-            data
+            "[LocalForge] Build:",
+            build
         );
 
 
-        return data;
+        return build;
     }
 
     catch (error) {
 
+        /*
+         Build metadata must never stop
+         the modeling engine.
+        */
+
         console.warn(
-            "[LocalForge] build.json:",
+            "[LocalForge] build.json unavailable:",
             error
         );
 
@@ -145,24 +221,36 @@ async function loadBuild() {
 
 /* =========================================================
    SERVICE WORKER
-
-   Never block Three.js startup.
 ========================================================= */
 
 async function registerServiceWorker() {
 
     if (
-        !("serviceWorker" in navigator)
+        !(
+            "serviceWorker"
+            in navigator
+        )
     ) {
-        return;
+
+        return null;
     }
 
 
+    /*
+     Service workers require HTTPS,
+     except localhost.
+    */
+
     if (
-        location.protocol !== "https:" &&
-        location.hostname !== "localhost"
+        location.protocol !==
+            "https:" &&
+        location.hostname !==
+            "localhost" &&
+        location.hostname !==
+            "127.0.0.1"
     ) {
-        return;
+
+        return null;
     }
 
 
@@ -179,28 +267,53 @@ async function registerServiceWorker() {
                 );
 
 
-        registration.update()
-            .catch(() => {});
-
-
         console.log(
             "[LocalForge] Service worker:",
             registration.scope
         );
+
+
+        /*
+         Ask for a fresh copy, but don't
+         hold up application startup.
+        */
+
+        registration
+            .update()
+            .catch(
+                error => {
+
+                    console.warn(
+                        "[LocalForge] SW update check:",
+                        error
+                    );
+                }
+            );
+
+
+        return registration;
     }
 
     catch (error) {
 
+        /*
+         A PWA failure must never stop
+         the actual 3D editor.
+        */
+
         console.warn(
-            "[LocalForge] Service worker not active:",
+            "[LocalForge] Service worker unavailable:",
             error
         );
+
+
+        return null;
     }
 }
 
 
 /* =========================================================
-   WAIT FOR APP EVENT
+   APPLICATION READINESS
 ========================================================= */
 
 function waitForApplication(
@@ -210,11 +323,18 @@ function waitForApplication(
     return new Promise(
         (resolve, reject) => {
 
+            /*
+             app.js may already have completed.
+            */
+
             if (
                 window.__LOCALFORGE_READY__
             ) {
 
-                resolve();
+                resolve(
+                    window.LocalForge3D ||
+                    true
+                );
 
                 return;
             }
@@ -236,6 +356,10 @@ function waitForApplication(
                 false;
 
 
+            let timer =
+                null;
+
+
             const cleanup =
                 () => {
 
@@ -247,8 +371,16 @@ function waitForApplication(
 
                     window.removeEventListener(
                         "localforge:error",
-                        error
+                        failed
                     );
+
+
+                    if (timer) {
+
+                        clearTimeout(
+                            timer
+                        );
+                    }
                 };
 
 
@@ -266,11 +398,15 @@ function waitForApplication(
 
                     cleanup();
 
-                    resolve();
+
+                    resolve(
+                        window.LocalForge3D ||
+                        true
+                    );
                 };
 
 
-            const error =
+            const failed =
                 event => {
 
                     if (finished) {
@@ -287,8 +423,9 @@ function waitForApplication(
 
                     reject(
                         event.detail?.error ||
+                        window.__LOCALFORGE_ERROR__ ||
                         new Error(
-                            "LocalForge app initialization failed."
+                            "LocalForge application initialization failed."
                         )
                     );
                 };
@@ -305,67 +442,78 @@ function waitForApplication(
 
             window.addEventListener(
                 "localforge:error",
-                error,
+                failed,
                 {
                     once: true
                 }
             );
 
 
-            setTimeout(
-                () => {
+            timer =
+                setTimeout(
+                    () => {
 
-                    if (finished) {
-                        return;
-                    }
-
-
-                    const canvas =
-                        document.querySelector(
-                            "#f-view canvas"
-                        );
+                        if (finished) {
+                            return;
+                        }
 
 
-                    if (canvas) {
+                        const canvas =
+                            document.querySelector(
+                                "#f-view canvas"
+                            );
+
+
+                        /*
+                         If the canvas exists, app.js
+                         successfully initialized even if
+                         the event was somehow missed.
+                        */
+
+                        if (canvas) {
+
+                            finished =
+                                true;
+
+
+                            cleanup();
+
+
+                            resolve(
+                                window.LocalForge3D ||
+                                true
+                            );
+
+
+                            return;
+                        }
+
 
                         finished =
                             true;
 
+
                         cleanup();
 
-                        resolve();
 
-                        return;
-                    }
-
-
-                    finished =
-                        true;
-
-                    cleanup();
-
-
-                    reject(
-                        new Error(
-                            "app.js did not create a WebGL canvas within 20 seconds."
-                        )
-                    );
-                },
-
-                timeout
-            );
+                        reject(
+                            new Error(
+                                "The 3D engine did not create a WebGL viewport within 20 seconds."
+                            )
+                        );
+                    },
+                    timeout
+                );
         }
     );
 }
 
 
 /* =========================================================
-   STORAGE
-
-   Storage failure must NOT kill the renderer.
+   DATABASE
 ========================================================= */
 
-async function startStorage() {
+async function startDatabase() {
 
     try {
 
@@ -376,7 +524,8 @@ async function startStorage() {
 
 
         if (
-            typeof database.openDatabase ===
+            typeof
+                database.openDatabase ===
             "function"
         ) {
 
@@ -385,9 +534,21 @@ async function startStorage() {
         }
 
 
+        window.LocalForgeModules =
+            window.LocalForgeModules ||
+            {};
+
+
+        window.LocalForgeModules.database =
+            database;
+
+
         console.log(
             "[LocalForge] Database ready."
         );
+
+
+        return database;
     }
 
     catch (error) {
@@ -396,8 +557,18 @@ async function startStorage() {
             "[LocalForge] Database unavailable:",
             error
         );
-    }
 
+
+        return null;
+    }
+}
+
+
+/* =========================================================
+   AUTOSAVE
+========================================================= */
+
+async function startAutosave() {
 
     try {
 
@@ -408,7 +579,8 @@ async function startStorage() {
 
 
         if (
-            typeof autosave.startAutosave ===
+            typeof
+                autosave.startAutosave ===
             "function"
         ) {
 
@@ -417,9 +589,21 @@ async function startStorage() {
         }
 
 
+        window.LocalForgeModules =
+            window.LocalForgeModules ||
+            {};
+
+
+        window.LocalForgeModules.autosave =
+            autosave;
+
+
         console.log(
             "[LocalForge] Autosave ready."
         );
+
+
+        return autosave;
     }
 
     catch (error) {
@@ -428,7 +612,199 @@ async function startStorage() {
             "[LocalForge] Autosave unavailable:",
             error
         );
+
+
+        return null;
     }
+}
+
+
+/* =========================================================
+   STORAGE
+========================================================= */
+
+async function startStorage() {
+
+    /*
+     Database should initialize before
+     autosave tries to use it.
+    */
+
+    await startDatabase();
+
+    await startAutosave();
+}
+
+
+/* =========================================================
+   FEATURE SYSTEM
+========================================================= */
+
+async function startFeatures() {
+
+    try {
+
+        console.log(
+            "[LocalForge] Loading feature center…"
+        );
+
+
+        const features =
+            await import(
+                "./features.js"
+            );
+
+
+        if (
+            typeof
+                features.initializeFeatures ===
+            "function"
+        ) {
+
+            await features
+                .initializeFeatures();
+        }
+
+
+        window.LocalForgeModules =
+            window.LocalForgeModules ||
+            {};
+
+
+        window.LocalForgeModules.features =
+            features;
+
+
+        console.log(
+            "[LocalForge] Feature center ready."
+        );
+
+
+        return features;
+    }
+
+    catch (error) {
+
+        /*
+         Feature extensions are optional.
+
+         Failure here should not destroy
+         the modeling application.
+        */
+
+        console.warn(
+            "[LocalForge] Feature center unavailable:",
+            error
+        );
+
+
+        return null;
+    }
+}
+
+
+/* =========================================================
+   RUNTIME
+========================================================= */
+
+async function startRuntime() {
+
+    setStatus(
+        "Preparing runtime…"
+    );
+
+
+    const runtime =
+        await import(
+            "./runtime.js"
+        );
+
+
+    if (
+        typeof
+            runtime.initializeRuntime ===
+        "function"
+    ) {
+
+        const result =
+            await runtime
+                .initializeRuntime();
+
+
+        /*
+         An explicit "no WebGL" result is
+         a real engine blocker.
+        */
+
+        if (
+            result
+                ?.capabilities
+                ?.webgl
+                ?.available ===
+            false
+        ) {
+
+            throw new Error(
+                "WebGL is unavailable on this device."
+            );
+        }
+    }
+
+
+    window.LocalForgeModules =
+        window.LocalForgeModules ||
+        {};
+
+
+    window.LocalForgeModules.runtime =
+        runtime;
+
+
+    return runtime;
+}
+
+
+/* =========================================================
+   APPLICATION
+========================================================= */
+
+async function startApplication() {
+
+    /*
+     Begin listening BEFORE app.js executes.
+
+     app.js can become ready extremely quickly,
+     and this prevents us from missing its event.
+    */
+
+    const readyPromise =
+        waitForApplication();
+
+
+    setStatus(
+        "Starting 3D engine…"
+    );
+
+
+    const appModule =
+        await import(
+            "./app.js"
+        );
+
+
+    window.LocalForgeModules =
+        window.LocalForgeModules ||
+        {};
+
+
+    window.LocalForgeModules.app =
+        appModule;
+
+
+    await readyPromise;
+
+
+    return appModule;
 }
 
 
@@ -442,131 +818,95 @@ async function boot() {
         booting ||
         booted
     ) {
+
         return;
     }
 
 
-    booting = true;
+    booting =
+        true;
 
 
     try {
 
-        status(
+        console.log(
+            "=========================================="
+        );
+
+        console.log(
+            " LocalForge 3D"
+        );
+
+        console.log(
+            " Starting application"
+        );
+
+        console.log(
+            "=========================================="
+        );
+
+
+        setStatus(
             "Starting LocalForge…"
         );
 
 
         /*
-        ----------------------------------------------
-        Build metadata is optional.
-        ----------------------------------------------
+        ------------------------------------------------------
+        STEP 1
+        BUILD METADATA
+
+        Does not block startup if missing.
+        ------------------------------------------------------
         */
 
-        loadBuild();
+        await loadBuild();
 
 
         /*
-        ----------------------------------------------
-        Runtime environment.
-        ----------------------------------------------
+        ------------------------------------------------------
+        STEP 2
+        RUNTIME
+        ------------------------------------------------------
         */
 
-        status(
-            "Preparing runtime…"
-        );
-
-
-        const runtime =
-            await import(
-                "./runtime.js"
-            );
-
-
-        if (
-            typeof runtime.initializeRuntime ===
-            "function"
-        ) {
-
-            const result =
-                await runtime
-                    .initializeRuntime();
-
-
-            /*
-             Do not continue if runtime explicitly
-             determined WebGL is unavailable.
-            */
-
-            if (
-                result?.capabilities?.webgl &&
-                result.capabilities.webgl.available ===
-                    false
-            ) {
-
-                throw new Error(
-                    "WebGL is unavailable on this device."
-                );
-            }
-        }
+        await startRuntime();
 
 
         /*
-        ----------------------------------------------
-        Persistence begins asynchronously.
+        ------------------------------------------------------
+        STEP 3
+        STORAGE
 
-        Do NOT await this before the 3D engine.
-        ----------------------------------------------
+        Begin asynchronously.
+
+        IndexedDB should never delay the 3D renderer.
+        ------------------------------------------------------
         */
 
-        startStorage();
+        const storagePromise =
+            startStorage();
 
 
         /*
-        ----------------------------------------------
-        Begin listening BEFORE app.js is imported.
-
-        This prevents missing an immediate ready/error
-        event emitted during app startup.
-        ----------------------------------------------
+        ------------------------------------------------------
+        STEP 4
+        THREE.JS + MODELING APPLICATION
+        ------------------------------------------------------
         */
 
-        const applicationReady =
-            waitForApplication();
-
-
-        status(
-            "Starting 3D engine…"
-        );
+        await startApplication();
 
 
         /*
-        ----------------------------------------------
-        Single application entry.
-        ----------------------------------------------
+        ------------------------------------------------------
+        STEP 5
+        APP IS READY
+        ------------------------------------------------------
         */
-
-        await import(
-            "./app.js"
-        );
-
-
-        /*
-        ----------------------------------------------
-        Wait for app.js itself to report readiness.
-        ----------------------------------------------
-        */
-
-        await applicationReady;
-
 
         booted =
             true;
-
-
-        status(
-            "Ready",
-            "ready"
-        );
 
 
         ROOT?.classList.add(
@@ -574,34 +914,85 @@ async function boot() {
         );
 
 
-        console.log(
-            "[LocalForge] Complete."
+        setStatus(
+            "Ready",
+            "ready"
         );
 
 
         /*
-        ----------------------------------------------
-        PWA comes last.
-        ----------------------------------------------
+        ------------------------------------------------------
+        STEP 6
+        NEW FEATURE CENTER
+
+        Creates:
+        - Check Updates button
+        - Features button
+        - viewport tools
+        - performance modes
+        - screenshot
+        - diagnostics
+        ------------------------------------------------------
+        */
+
+        await startFeatures();
+
+
+        /*
+        ------------------------------------------------------
+        STEP 7
+        PWA SERVICE WORKER
+
+        Register AFTER the editor is usable.
+        ------------------------------------------------------
         */
 
         registerServiceWorker();
+
+
+        /*
+        ------------------------------------------------------
+        STORAGE COMPLETION
+
+        We deliberately don't make editor readiness depend
+        upon storage initialization.
+        ------------------------------------------------------
+        */
+
+        storagePromise
+            .catch(
+                error => {
+
+                    console.warn(
+                        "[LocalForge] Storage startup:",
+                        error
+                    );
+                }
+            );
+
+
+        console.log(
+            "[LocalForge] Complete."
+        );
     }
 
     catch (error) {
 
-        fail(error);
+        fail(
+            error
+        );
     }
 
     finally {
 
-        booting = false;
+        booting =
+            false;
     }
 }
 
 
 /* =========================================================
-   ERROR REPORTING
+   GLOBAL ERROR REPORTING
 ========================================================= */
 
 window.addEventListener(
@@ -627,6 +1018,38 @@ window.addEventListener(
         );
     }
 );
+
+
+/* =========================================================
+   DEBUG API
+========================================================= */
+
+window.LocalForgeBootstrap = {
+
+    get booted() {
+        return booted;
+    },
+
+    get booting() {
+        return booting;
+    },
+
+    boot,
+
+    checkUpdates() {
+
+        return window
+            .LocalForgeUpdates
+            ?.check?.();
+    },
+
+    openFeatures() {
+
+        window
+            .LocalForgeFeatures
+            ?.open?.();
+    }
+};
 
 
 /* =========================================================
