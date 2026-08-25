@@ -1,0 +1,9 @@
+{
+  "name": "localforge-3d",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Mobile-first Three.js modeling, sculpting and node-based 3D editor.",
+  "scripts": {
+    "serve": "npx serve ."
+  }
+}
