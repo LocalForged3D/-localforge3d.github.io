@@ -1,0 +1,10 @@
+{
+  "app": "LocalForge 3D",
+  "engine": "Three.js",
+  "threeVersion": "0.185.0",
+  "entry": "index.html",
+  "core": "assets/js/app.js",
+  "stylesheet": "assets/css/app.css",
+  "deployment": "GitHub Pages",
+  "buildRequired": false
+}
