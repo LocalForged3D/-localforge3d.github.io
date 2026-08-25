@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0e1014">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LocalForge 3D">
+<title>LocalForge 3D</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="stylesheet" href="./assets/css/app.css">
+</head>
+<body>
+<main id="forge3d" class="forge3d">
+<div class="f-app">
+ <div class="f-bar">
+  <button class="f-tab active" type="button" data-work="object">Object</button>
+  <button class="f-tab" type="button" data-work="edit">Edit</button>
+  <button class="f-tab" type="button" data-work="sculpt">Sculpt</button>
+  <button class="f-tab" type="button" data-work="nodes">Nodes</button>
+  <div class="f-spacer"></div>
+  <button class="f-btn" type="button" id="f-undo">Undo</button>
+  <button class="f-btn" type="button" id="f-redo">Redo</button>
+  <button class="f-btn" type="button" id="f-frame">Frame</button>
+  <button class="f-btn" type="button" id="f-wire">Wire</button>
+ </div>
+ <div class="f-layout">
+  <section class="f-panel f-left"><div class="f-head"><span id="f-left-title">Object Tools</span></div><div class="f-body" id="f-left"></div></section>
+  <section class="f-stage">
+   <div class="f-stagebar">
+    <button class="f-btn active" type="button" data-gizmo="translate">Move</button>
+    <button class="f-btn" type="button" data-gizmo="rotate">Rotate</button>
+    <button class="f-btn" type="button" data-gizmo="scale">Scale</button>
+    <button class="f-btn" type="button" id="f-space">World</button>
+   </div>
+   <div class="f-view" id="f-view"><div class="f-overlay" id="f-overlay">Orbit: one finger / mouse drag · Zoom/pan: two fingers</div></div>
+   <div class="f-status" id="f-status" aria-live="polite">Loading Three.js modeling engine…</div>
+  </section>
+  <section class="f-panel f-right"><div class="f-head"><span id="f-right-title">Properties</span></div><div class="f-body" id="f-right"></div></section>
+ </div>
+</div>
+</main>
+<script type="module" src="./assets/js/app.js"></script>
+</body>
+</html>
